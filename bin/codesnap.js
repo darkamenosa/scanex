@@ -307,16 +307,28 @@ if (!aliasConfig) {
   }
 }
 
+/* helper function to get proper extension including composite ones -------- */
+function getFileExtension(filepath, allExtensions) {
+  // Check for composite extensions first (like .html.erb)
+  for (const ext of allExtensions) {
+    if (filepath.endsWith(ext)) {
+      return ext;
+    }
+  }
+  // Fallback to standard extname for simple extensions
+  return extname(filepath);
+}
+
 /* seed queue ------------------------------------------------------------- */
 const queue = [];
 for (const p of INPUTS) queue.push(...walk(p, IGNORE, projectRoot));
 
-const visited = new Set(queue.filter(f => ALL_EXT.includes(extname(f))));
+const visited = new Set(queue.filter(f => ALL_EXT.includes(getFileExtension(f, ALL_EXT))));
 
 /* BFS over imports ------------------------------------------------------- */
 for (let i = 0; i < queue.length; i++) {
   const file = queue[i];
-  const scanner = scanners.get(extname(file));
+  const scanner = scanners.get(getFileExtension(file, ALL_EXT));
   if (!scanner) continue;
 
   const src = readFileSync(file, 'utf8');
