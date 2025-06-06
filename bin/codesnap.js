@@ -309,7 +309,15 @@ if (!aliasConfig) {
 
 /* helper function to get proper extension including composite ones -------- */
 function getFileExtension(filepath, allExtensions) {
-  // Check for composite extensions first (like .html.erb)
+  // Handle Dockerfiles first (special case with no traditional extension)
+  const fileName = filepath.split('/').pop();
+  if (fileName === 'Dockerfile' || fileName.startsWith('Dockerfile.')) {
+    if (allExtensions.includes('Dockerfile')) {
+      return 'Dockerfile';
+    }
+  }
+  
+  // Check for composite extensions (like .html.erb)
   for (const ext of allExtensions) {
     if (filepath.endsWith(ext)) {
       return ext;
