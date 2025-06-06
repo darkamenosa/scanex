@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { program } from 'commander';
 import { resolve, dirname, extname, join, relative } from 'node:path';
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 import { loadPlugins, walk, bundle, log, makeTree } from '../lib/core.js';
@@ -18,13 +18,14 @@ program
   .description('📸 A tool that extracts and bundles related code from files or directories into a markdown file.\n\nCodesnap analyzes your code dependencies and creates a comprehensive documentation file containing all related source files in a structured format.')
   .version(packageJson.version, '-v, --version', 'display version number')
   .option('-i, --input <paths>', 
-    'comma-separated files or directories to analyze\n' +
+    'comma-separated files or directories to analyze (default: current directory)\n' +
     '                                     Examples:\n' +
     '                                       --input src/main.js\n' +
     '                                       --input src/,lib/utils.js\n' +
     '                                       --input .')
   .option('-e, --exclude <pattern>', 
-    'regex pattern of paths to ignore (default: "node_modules|test")\n' +
+    'regex pattern of paths to ignore (default: "node_modules|test|routes/index.js")\n' +
+    '                                     Note: .gitignore patterns are automatically included\n' +
     '                                     Examples:\n' +
     '                                       --exclude "node_modules|test|dist"\n' +
     '                                       --exclude ".*\\.spec\\.js$|routes/index.js"', 
@@ -37,8 +38,11 @@ program
     '                                       --output ./docs/codebase.md')
   .addHelpText('after', `
 Examples:
+  $ codesnap
+    Analyze all files in current directory (respects .gitignore)
+
   $ codesnap --input src/main.js
-    Analyze main.js and its dependencies, output to main.js.md
+    Analyze main.js and its dependencies, output to codesnap.md
 
   $ codesnap --input src/ --output docs/codebase.md
     Analyze all files in src/ directory, output to docs/codebase.md
@@ -46,7 +50,7 @@ Examples:
   $ codesnap --input lib/,src/utils.js --exclude "test|spec"
     Analyze lib/ directory and utils.js, excluding test files
 
-  $ codesnap --input . --exclude "node_modules|dist|build"
+  $ codesnap --exclude "node_modules|dist|build"
     Analyze entire project, excluding common build directories
 
 Features:
@@ -55,35 +59,97 @@ Features:
   • 📝 Bundles all related code into organized markdown
   • 🚀 Supports multiple programming languages
   • ⚡ Fast dependency resolution with tree-sitter
+  • 🙈 Automatically respects .gitignore files
 
 For more information, visit: https://github.com/darkamenosa/codesnap
 `)
   .parse();
 
 const opts = program.opts();
-if (!opts.input) { 
-  console.error('❌ Error: --input option is required');
-  console.error('');
-  console.error('Usage: codesnap --input <paths> [options]');
-  console.error('');
-  console.error('Try "codesnap --help" for more information.');
-  process.exit(1); 
-}
 
 /* plug-ins --------------------------------------------------------------- */
 const { scanners, resolvers, ALL_EXT } =
   await loadPlugins(join(PKG_ROOT, 'lib/lang'));
 
-const INPUTS = opts.input.split(',').map(p => resolve(p.trim()));
-const IGNORE = new RegExp(opts.exclude.replace(/\*/g, '.*'), 'i');
-const OUTPUT = resolve(opts.output || 'codesnap.md');
-const initialPath = dirname(INPUTS[0]);
+// Default to current directory if no input provided
+const INPUTS = (opts.input || '.').split(',').map(p => resolve(p.trim()));
 
 /* find project root ------------------------------------------------------ */
-let projectRoot = initialPath;
-while (projectRoot !== '/' && !existsSync(join(projectRoot, 'package.json'))) {
+let projectRoot = INPUTS[0];
+
+// If input is a file, start from its directory
+if (existsSync(projectRoot) && statSync(projectRoot).isFile()) {
   projectRoot = dirname(projectRoot);
 }
+
+// Search upward for package.json to find project root
+while (projectRoot !== '/' && !existsSync(join(projectRoot, 'package.json'))) {
+  const parent = dirname(projectRoot);
+  if (parent === projectRoot) break; // Prevent infinite loop at root
+  projectRoot = parent;
+}
+
+console.log(`[codesnap] Project root detected as: ${projectRoot}`);
+
+/* read .gitignore patterns ----------------------------------------------- */
+function parseGitignore(gitignorePath) {
+  if (!existsSync(gitignorePath)) return [];
+  
+  const content = readFileSync(gitignorePath, 'utf8');
+  const patterns = content
+    .split('\n')
+    .map(line => line.trim())
+    .filter(line => line && !line.startsWith('#')) // Remove empty lines and comments
+    .map(pattern => {
+      // Convert gitignore patterns to regex patterns
+      if (pattern.startsWith('!')) {
+        // Negation patterns are complex to handle, skip for now
+        return null;
+      }
+      
+      // Handle different gitignore pattern types
+      let regexPattern = pattern;
+      
+      // Remove leading slash for absolute patterns
+      if (regexPattern.startsWith('/')) {
+        regexPattern = regexPattern.slice(1);
+      }
+      
+      // Escape special regex characters except * and ?
+      regexPattern = regexPattern
+        .replace(/[.+^${}()|[\]\\]/g, '\\$&')
+        .replace(/\*/g, '.*')
+        .replace(/\?/g, '.');
+      
+      // Handle directory patterns (ending with /)
+      if (pattern.endsWith('/')) {
+        regexPattern = regexPattern + '.*';
+      }
+      
+      // Make pattern match anywhere in the path
+      regexPattern = '(^|/)' + regexPattern + '($|/)';
+      
+      return regexPattern;
+    })
+    .filter(Boolean);
+
+  if (patterns.length > 0) {
+    console.log(`[codesnap] Loaded ${patterns.length} .gitignore patterns`);
+  }
+  return patterns;
+}
+
+const gitignorePath = join(projectRoot, '.gitignore');
+const gitignorePatterns = parseGitignore(gitignorePath);
+
+// Combine user exclude patterns with gitignore patterns  
+let excludePattern = opts.exclude;
+if (gitignorePatterns.length > 0) {
+  excludePattern += '|' + gitignorePatterns.join('|');
+}
+
+const IGNORE = new RegExp(excludePattern.replace(/\*/g, '.*'), 'i');
+const OUTPUT = resolve(opts.output || 'codesnap.md');
 
 /* load ts/jsconfig for path aliases -------------------------------------- */
 let aliasConfig = null;
@@ -94,11 +160,13 @@ if (existsSync(tsconfigPath)) {
   try {
     const content = readFileSync(tsconfigPath, 'utf8');
     aliasConfig = JSON.parse(content.replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, ''));
+    if (aliasConfig) console.log(`[codesnap] Loaded tsconfig.json for path aliases`);
   } catch (e) { console.error(`Error parsing tsconfig.json: ${e.message}`); }
 } else if (existsSync(jsconfigPath)) {
   try {
     const content = readFileSync(jsconfigPath, 'utf8');
     aliasConfig = JSON.parse(content.replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, ''));
+    if (aliasConfig) console.log(`[codesnap] Loaded jsconfig.json for path aliases`);
   } catch (e) { console.error(`Error parsing jsconfig.json: ${e.message}`); }
 }
 

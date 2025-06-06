@@ -5,19 +5,23 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "bin": { "codesnap": "./bin/codesnap.js" },
+  "bin": {
+    "codesnap": "./bin/codesnap.js"
+  },
   "type": "module",
-  "engines": { "node": ">=18" },
+  "engines": {
+    "node": ">=18"
+  },
   "keywords": [],
   "author": "darkamenosa",
   "license": "MIT",
   "description": "A tool can related code from a file or directory then put into a .md file.",
   "dependencies": {
     "commander": "^14.0.0",
-    "tree-sitter": "^0.21.1",
-    "tree-sitter-javascript": "^0.23.1",
-    "tree-sitter-ruby": "^0.23.1",
-    "tree-sitter-typescript": "^0.23.0"
+    "tree-sitter": "^0.20.0",
+    "tree-sitter-javascript": "^0.20.0",
+    "tree-sitter-ruby": "^0.19.0",
+    "tree-sitter-typescript": "^0.20.0"
   },
   "devDependencies": {
     "chalk": "^5.4.1"
