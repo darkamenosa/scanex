@@ -365,9 +365,20 @@ for (let i = 0; i < queue.length; i++) {
     }
 
     if (target && !IGNORE.test(target) && !visited.has(target)) {
-      visited.add(target);
-      queue.push(target);
-      log('⊕', relative(projectRoot, target));
+      // Safety check: ensure target is a file, not a directory
+      try {
+        const stat = statSync(target);
+        if (stat.isFile()) {
+          visited.add(target);
+          queue.push(target);
+          log('⊕', relative(projectRoot, target));
+        } else if (stat.isDirectory()) {
+          console.warn(`⚠️  Skipping directory: ${relative(projectRoot, target)}`);
+        }
+      } catch (e) {
+        // File doesn't exist or can't be accessed
+        console.warn(`⚠️  Skipping invalid path: ${relative(projectRoot, target)} (${e.message})`);
+      }
     }
   }
 }
