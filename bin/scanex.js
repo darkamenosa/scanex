@@ -14,8 +14,8 @@ const packageJson = JSON.parse(readFileSync(join(PKG_ROOT, 'package.json'), 'utf
 
 /* CLI -------------------------------------------------------------------- */
 program
-  .name('codesnap')
-  .description('📸 A tool that extracts and bundles related code from files or directories into a markdown file.\n\nCodesnap analyzes your code dependencies and creates a comprehensive documentation file containing all related source files in a structured format.')
+  .name('scanex')
+  .description('📸 A tool that extracts and bundles related code from files or directories into a markdown file.\n\nScanEx analyzes your code dependencies and creates a comprehensive documentation file containing all related source files in a structured format.')
   .version(packageJson.version, '-v, --version', 'display version number')
   .option('-i, --input <paths>', 
     'comma-separated files or directories to analyze (default: current directory)\n' +
@@ -38,31 +38,31 @@ program
     '                                       --output ./docs/codebase.md')
   .addHelpText('after', `
 Examples:
-  $ codesnap
+  $ scanex
     Analyze all files in current directory, output to stdout
 
-  $ codesnap > codesnap.md
-    Analyze current directory, save to codesnap.md
+  $ scanex > scanex.md
+    Analyze current directory, save to scanex.md
 
-  $ codesnap --input src/main.js > documentation.md
+  $ scanex --input src/main.js > documentation.md
     Analyze main.js and its dependencies, save to documentation.md
 
-  $ codesnap --input src/ --output docs/codebase.md
+  $ scanex --input src/ --output docs/codebase.md
     Analyze all files in src/ directory, save to specified file
 
-  $ codesnap --input lib/,src/utils.js --exclude "test|spec"
+  $ scanex --input lib/,src/utils.js --exclude "test|spec"
     Analyze lib/ directory and utils.js, output to stdout
 
-  $ codesnap --exclude "node_modules|dist|build" > project.md
+  $ scanex --exclude "node_modules|dist|build" > project.md
     Analyze entire project, save to project.md
 
-  $ codesnap | pbcopy
+  $ scanex | pbcopy
     Copy bundled code directly to clipboard (macOS)
     
-  $ codesnap | xclip -selection clipboard
+  $ scanex | xclip -selection clipboard
     Copy bundled code directly to clipboard (Linux)
 
-  $ codesnap | grep "function"
+  $ scanex | grep "function"
     Pipe output through grep to find functions
 
 Features:
@@ -73,7 +73,7 @@ Features:
   • ⚡ Fast dependency resolution with tree-sitter
   • 🙈 Automatically respects .gitignore files
 
-For more information, visit: https://github.com/darkamenosa/codesnap
+For more information, visit: https://github.com/darkamenosa/scanex
 `)
   .parse();
 
@@ -234,13 +234,13 @@ while (currentDir !== dirname(currentDir)) { // Stop at filesystem root
 // 3. Original input directory (fallback)
 if (foundRepoRoot) {
   projectRoot = foundRepoRoot;
-  console.error(`[codesnap] Repository root detected as: ${projectRoot}`);
+  console.error(`[scanex] Repository root detected as: ${projectRoot}`);
 } else if (foundProjectRoot) {
   projectRoot = foundProjectRoot;
-  console.error(`[codesnap] Project root detected as: ${projectRoot}`);
+  console.error(`[scanex] Project root detected as: ${projectRoot}`);
 } else {
   projectRoot = originalProjectRoot;
-  console.error(`[codesnap] Using input directory as project root: ${projectRoot}`);
+  console.error(`[scanex] Using input directory as project root: ${projectRoot}`);
 }
 
 /* read .gitignore patterns ----------------------------------------------- */
@@ -286,7 +286,7 @@ if (INPUTS.length > 0 && INPUTS[0] !== projectRoot) {
       try {
         const content = readFileSync(config.path, 'utf8');
         aliasConfig = parseConfigFile(content);
-        console.error(`[codesnap] Loaded ${config.type}.json from ${relative(projectRoot, config.path)} for path aliases`);
+        console.error(`[scanex] Loaded ${config.type}.json from ${relative(projectRoot, config.path)} for path aliases`);
       } catch (e) {
         console.error(`Error parsing ${config.type}.json: ${e.message}`);
       }
@@ -303,7 +303,7 @@ if (!aliasConfig) {
     try {
       const content = readFileSync(tsconfigPath, 'utf8');
       aliasConfig = parseConfigFile(content);
-      console.error(`[codesnap] Loaded tsconfig.json for path aliases`);
+      console.error(`[scanex] Loaded tsconfig.json for path aliases`);
     } catch (e) {
       console.error(`Error parsing tsconfig.json: ${e.message}`);
     }
@@ -311,7 +311,7 @@ if (!aliasConfig) {
     try {
       const content = readFileSync(jsconfigPath, 'utf8');
       aliasConfig = parseConfigFile(content);
-      console.error(`[codesnap] Loaded jsconfig.json for path aliases`);
+      console.error(`[scanex] Loaded jsconfig.json for path aliases`);
     } catch (e) {
       console.error(`Error parsing jsconfig.json: ${e.message}`);
     }

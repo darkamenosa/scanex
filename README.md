@@ -1,20 +1,21 @@
-# 📸 CodeSnap
+# 📸 ScanEx
 
 > A powerful CLI tool that automatically discovers and bundles related source code into a single markdown file, perfect for sharing with LLMs like ChatGPT, Claude, or Cursor AI.
+
+**ScanEx** = **Scan** and **Export** - because that's exactly what it does! 🎯
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org/)
 
-## 🎯 Why CodeSnap?
+## 🎯 Why ScanEx?
 
-When working with AI assistants (ChatGPT, Claude, Cursor, etc.), you often need to share multiple related files to get meaningful help. Manually copying and pasting dozens of files is:
+I wrote this project because I wanted to copy and paste source code quickly to ask LLMs for help.
 
-- ⏰ **Time-consuming** - Finding and copying related files manually
-- 😫 **Error-prone** - Missing dependencies or including irrelevant files  
-- 🔄 **Repetitive** - Doing this every time you need AI assistance
-- 📂 **Context-lost** - No clear overview of your project structure
+While coding with Cursor, or when I want to ask something about my implementation on ChatGPT or Google AI Studio, I have to copy related source code way too many times. I have to search and copy a lot of files manually. 
 
-**CodeSnap solves this** by automatically analyzing your code dependencies and bundling everything into a single, well-structured markdown file.
+So I decided to implement something where I can just point to a file, and it will automatically scan related files and write it out for me.
+
+That's it. Simple problem, simple solution. Now instead of spending 10 minutes copying files, I just run one command and get everything I need. 🎯
 
 ## ✨ Features
 
@@ -30,23 +31,23 @@ When working with AI assistants (ChatGPT, Claude, Cursor, etc.), you often need 
 ## 🚀 Installation
 
 ```bash
-npm install -g codesnap
+npm install -g scanex
 ```
 
 ## 📋 Quick Start
 
 ```bash
 # Analyze current directory and copy to clipboard (macOS)
-codesnap | pbcopy
+scanex | pbcopy
 
 # Save analysis to a file
-codesnap > my-project.md
+scanex > my-project.md
 
 # Analyze specific files
-codesnap --input src/main.js > analysis.md
+scanex --input src/main.js > analysis.md
 
 # Analyze directory with custom output
-codesnap --input src/ --output docs/codebase.md
+scanex --input src/ --output docs/codebase.md
 ```
 
 ## 🎯 Common Use Cases
@@ -54,32 +55,32 @@ codesnap --input src/ --output docs/codebase.md
 ### 💬 Sharing Code with AI Assistants
 ```bash
 # Quick copy for ChatGPT/Claude
-codesnap --input src/components/UserForm.tsx | pbcopy
+scanex --input src/components/UserForm.tsx | pbcopy
 
 # Analyze a bug and share context
-codesnap --input src/utils/api.js --exclude "test|spec" > bug-report.md
+scanex --input src/utils/api.js --exclude "test|spec" > bug-report.md
 ```
 
 ### 📚 Documentation & Code Reviews
 ```bash
 # Create comprehensive project documentation
-codesnap --exclude "node_modules|dist|build" > PROJECT_OVERVIEW.md
+scanex --exclude "node_modules|dist|build" > PROJECT_OVERVIEW.md
 
 # Focus on specific modules
-codesnap --input src/auth/ > auth-module-docs.md
+scanex --input src/auth/ > auth-module-docs.md
 ```
 
 ### 🐛 Bug Reports with Full Context
 ```bash
 # Include all related files for a bug report
-codesnap --input src/problematic-file.js > bug-context.md
+scanex --input src/problematic-file.js > bug-context.md
 ```
 
 ## 🛠️ Usage
 
 ### Basic Syntax
 ```bash
-codesnap [options]
+scanex [options]
 ```
 
 ### Options
@@ -96,39 +97,39 @@ codesnap [options]
 #### 📁 Directory Analysis
 ```bash
 # Analyze entire project
-codesnap
+scanex
 
 # Analyze specific directory
-codesnap --input src/
+scanex --input src/
 
 # Exclude test files and build artifacts  
-codesnap --exclude "test|spec|dist|build|node_modules"
+scanex --exclude "test|spec|dist|build|node_modules"
 ```
 
 #### 📄 File Analysis
 ```bash
 # Analyze single file and its dependencies
-codesnap --input src/main.js
+scanex --input src/main.js
 
 # Analyze multiple specific files
-codesnap --input src/api.js,src/utils.js,src/types.ts
+scanex --input src/api.js,src/utils.js,src/types.ts
 ```
 
 #### 🔧 Advanced Usage
 ```bash
 # Unix-style piping
-codesnap | grep "function" | head -20
+scanex | grep "function" | head -20
 
 # Combine with other tools
-codesnap --input src/ | wc -l  # Count lines
+scanex --input src/ | wc -l  # Count lines
 
 # Save to custom location
-codesnap --input backend/ --output docs/backend-analysis.md
+scanex --input backend/ --output docs/backend-analysis.md
 ```
 
 ## 🌐 Supported Languages
 
-CodeSnap intelligently analyzes dependencies across multiple languages:
+ScanEx intelligently analyzes dependencies across multiple languages:
 
 | Language | Extensions | Features |
 |----------|------------|----------|
@@ -149,7 +150,7 @@ CodeSnap intelligently analyzes dependencies across multiple languages:
 
 ## 📊 Output Format
 
-CodeSnap generates clean, structured markdown:
+ScanEx generates clean, structured markdown:
 
 ```markdown
 <directory_tree>
@@ -185,7 +186,7 @@ import React from 'react';
 ## ⚙️ Configuration
 
 ### TypeScript/JavaScript Path Aliases
-CodeSnap automatically detects and resolves path aliases from:
+ScanEx automatically detects and resolves path aliases from:
 - `tsconfig.json`
 - `jsconfig.json`
 
@@ -203,7 +204,7 @@ Example `tsconfig.json`:
 ```
 
 ### .gitignore Integration
-CodeSnap automatically respects `.gitignore` files at any level in your project, so you don't need to worry about including:
+ScanEx automatically respects `.gitignore` files at any level in your project, so you don't need to worry about including:
 - `node_modules/`
 - Build artifacts (`dist/`, `build/`)
 - IDE files (`.vscode/`, `.idea/`)
@@ -212,7 +213,7 @@ CodeSnap automatically respects `.gitignore` files at any level in your project,
 ## 🔧 Advanced Features
 
 ### Project Root Detection
-CodeSnap intelligently detects your project root by looking for:
+ScanEx intelligently detects your project root by looking for:
 1. **Git repository** (`.git` directory)
 2. **Package files** (`package.json`, `pyproject.toml`, `Cargo.toml`, etc.)
 3. **Fallback** to input directory
@@ -230,14 +231,14 @@ We welcome contributions! Please feel free to submit a Pull Request.
 ### Development Setup
 ```bash
 # Clone the repository
-git clone https://github.com/darkamenosa/codesnap.git
-cd codesnap
+git clone https://github.com/darkamenosa/scanex.git
+cd scanex
 
 # Install dependencies
 npm install
 
 # Run locally
-node bin/codesnap.js --help
+node bin/scanex.js --help
 ```
 
 ## 📝 License
@@ -254,4 +255,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Made with ❤️ for developers who love AI-assisted coding**
 
-*CodeSnap - Because your AI deserves better context* 🚀 
+*ScanEx - Because your AI deserves better context* 🚀
