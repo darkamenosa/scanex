@@ -27,6 +27,44 @@ That's it. Simple problem, simple solution. Now instead of spending 10 minutes c
 - 🔧 **TypeScript/JavaScript Aliases** - Resolves path aliases from tsconfig.json
 - 🐚 **Unix-friendly** - Pipes naturally with other command-line tools
 - 📋 **Copy-Ready** - Perfect for pasting into AI chat interfaces
+- 🤖 **MCP Integration** - Use directly in Cursor via Model Context Protocol
+
+## 🤖 Model Context Protocol (MCP) Support
+
+ScanEx now includes a built-in MCP server that allows you to use its code analysis capabilities directly within Cursor and other MCP-compatible AI assistants!
+
+### Quick MCP Setup for Cursor
+
+1. **Configure Cursor**: Add this to your Cursor MCP configuration file:
+   ```json
+   {
+     "mcpServers": {
+       "scanex": {
+         "command": "npx",
+         "args": ["-y", "--package=scanex", "scanex-mcp"],
+         "env": {}
+       }
+     }
+   }
+   ```
+
+2. **Restart Cursor** and start using scanex tools directly in chat:
+   - "Analyze this codebase" 
+   - "Show me the dependencies of src/main.js"
+   - "Generate a directory tree"
+
+3. **No installation required!** `npx` automatically downloads the latest version
+
+4. **See full setup guide**: Check `MCP_SETUP.md` for detailed instructions
+
+### Available MCP Tools
+- **`analyze_codebase`** - Full dependency analysis and markdown generation
+- **`scan_dependencies`** - Scan specific files for their dependencies  
+- **`generate_tree`** - Create directory tree visualizations
+
+**Benefits**: No more copying/pasting code manually - Cursor can analyze your codebase in real-time! 🎉
+
+> 💡 **Publishing to NPM**: For even easier distribution, consider publishing your scanex to npm. See `PUBLISHING.md` for a complete guide on making your MCP server available via `npx` without requiring local installation.
 
 ## 🚀 Installation
 
