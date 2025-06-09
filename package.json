@@ -12,10 +12,23 @@
   "engines": {
     "node": ">=18"
   },
-  "keywords": [],
+  "keywords": [
+    "cli",
+    "code-analysis", 
+    "dependency-scanner",
+    "markdown",
+    "ai-assistant",
+    "chatgpt",
+    "claude",
+    "cursor",
+    "llm",
+    "tree-sitter",
+    "code-bundler",
+    "developer-tools"
+  ],
   "author": "darkamenosa",
   "license": "MIT",
-  "description": "A tool can related code from a file or directory then put into a .md file.",
+  "description": "A powerful CLI tool that automatically discovers and bundles related source code into a single markdown file, perfect for sharing with LLMs like ChatGPT, Claude, or Cursor AI.",
   "dependencies": {
     "commander": "^14.0.0",
     "tree-sitter": "^0.20.0",
