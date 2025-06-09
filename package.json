@@ -1,7 +1,6 @@
 {
   "name": "scanex",
   "version": "0.1.4",
-  "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -30,6 +29,7 @@
   "license": "MIT",
   "description": "A powerful CLI tool that automatically discovers and bundles related source code into a single markdown file, perfect for sharing with LLMs like ChatGPT, Claude, or Cursor AI.",
   "dependencies": {
+    "chalk": "^5.4.1",
     "commander": "^14.0.0",
     "tree-sitter": "^0.20.0",
     "tree-sitter-javascript": "^0.20.0",
@@ -37,9 +37,12 @@
     "tree-sitter-markdown": "^0.7.1",
     "tree-sitter-python": "^0.20.0",
     "tree-sitter-ruby": "^0.19.0",
-    "tree-sitter-typescript": "^0.20.0",
-    "chalk": "^5.4.1"
+    "tree-sitter-typescript": "^0.20.0"
   },
-  "devDependencies": {
-  }
+  "files": [
+    "bin/",
+    "lib/",
+    "README.md",
+    "LICENSE"
+  ]
 }
