@@ -31,27 +31,39 @@ program
     '                                       --exclude ".*\\.spec\\.js$|routes/index.js"', 
     'node_modules|test|routes/index\\.js')
   .option('-o, --output <file>', 
-    'markdown output file path\n' +
-    '                                     Default: codesnap.md in current directory\n' +
+    'write output to specified file instead of stdout\n' +
+    '                                     Default: output goes to stdout\n' +
     '                                     Examples:\n' +
     '                                       --output documentation.md\n' +
     '                                       --output ./docs/codebase.md')
   .addHelpText('after', `
 Examples:
   $ codesnap
-    Analyze all files in current directory (respects .gitignore)
+    Analyze all files in current directory, output to stdout
 
-  $ codesnap --input src/main.js
-    Analyze main.js and its dependencies, output to codesnap.md
+  $ codesnap > codesnap.md
+    Analyze current directory, save to codesnap.md
+
+  $ codesnap --input src/main.js > documentation.md
+    Analyze main.js and its dependencies, save to documentation.md
 
   $ codesnap --input src/ --output docs/codebase.md
-    Analyze all files in src/ directory, output to docs/codebase.md
+    Analyze all files in src/ directory, save to specified file
 
   $ codesnap --input lib/,src/utils.js --exclude "test|spec"
-    Analyze lib/ directory and utils.js, excluding test files
+    Analyze lib/ directory and utils.js, output to stdout
 
-  $ codesnap --exclude "node_modules|dist|build"
-    Analyze entire project, excluding common build directories
+  $ codesnap --exclude "node_modules|dist|build" > project.md
+    Analyze entire project, save to project.md
+
+  $ codesnap | pbcopy
+    Copy bundled code directly to clipboard (macOS)
+    
+  $ codesnap | xclip -selection clipboard
+    Copy bundled code directly to clipboard (Linux)
+
+  $ codesnap | grep "function"
+    Pipe output through grep to find functions
 
 Features:
   • 🔍 Automatically discovers file dependencies
@@ -222,20 +234,19 @@ while (currentDir !== dirname(currentDir)) { // Stop at filesystem root
 // 3. Original input directory (fallback)
 if (foundRepoRoot) {
   projectRoot = foundRepoRoot;
-  console.log(`[codesnap] Repository root detected as: ${projectRoot}`);
+  console.error(`[codesnap] Repository root detected as: ${projectRoot}`);
 } else if (foundProjectRoot) {
   projectRoot = foundProjectRoot;
-  console.log(`[codesnap] Project root detected as: ${projectRoot}`);
+  console.error(`[codesnap] Project root detected as: ${projectRoot}`);
 } else {
   projectRoot = originalProjectRoot;
-  console.log(`[codesnap] Using input directory as project root: ${projectRoot}`);
+  console.error(`[codesnap] Using input directory as project root: ${projectRoot}`);
 }
 
 /* read .gitignore patterns ----------------------------------------------- */
 // .gitignore files are now handled on-demand in the walk function
 // Only keep user exclude patterns
 const IGNORE = new RegExp(opts.exclude, 'i');
-const OUTPUT = resolve(opts.output || 'codesnap.md');
 
 /* load ts/jsconfig for path aliases -------------------------------------- */
 // Function to find the nearest tsconfig.json or jsconfig.json
@@ -275,7 +286,7 @@ if (INPUTS.length > 0 && INPUTS[0] !== projectRoot) {
       try {
         const content = readFileSync(config.path, 'utf8');
         aliasConfig = parseConfigFile(content);
-        console.log(`[codesnap] Loaded ${config.type}.json from ${relative(projectRoot, config.path)} for path aliases`);
+        console.error(`[codesnap] Loaded ${config.type}.json from ${relative(projectRoot, config.path)} for path aliases`);
       } catch (e) {
         console.error(`Error parsing ${config.type}.json: ${e.message}`);
       }
@@ -292,7 +303,7 @@ if (!aliasConfig) {
     try {
       const content = readFileSync(tsconfigPath, 'utf8');
       aliasConfig = parseConfigFile(content);
-      console.log(`[codesnap] Loaded tsconfig.json for path aliases`);
+      console.error(`[codesnap] Loaded tsconfig.json for path aliases`);
     } catch (e) {
       console.error(`Error parsing tsconfig.json: ${e.message}`);
     }
@@ -300,7 +311,7 @@ if (!aliasConfig) {
     try {
       const content = readFileSync(jsconfigPath, 'utf8');
       aliasConfig = parseConfigFile(content);
-      console.log(`[codesnap] Loaded jsconfig.json for path aliases`);
+      console.error(`[codesnap] Loaded jsconfig.json for path aliases`);
     } catch (e) {
       console.error(`Error parsing jsconfig.json: ${e.message}`);
     }
@@ -386,6 +397,16 @@ for (let i = 0; i < queue.length; i++) {
 /* build nice directory tree --------------------------------------------- */
 const treeStr = makeTree([...visited].map(f => relative(projectRoot, f)));
 
-/* write file ------------------------------------------------------------- */
-writeFileSync(OUTPUT, bundle([...visited].sort(), projectRoot, treeStr));
-console.log(`✅ wrote ${relative('.', OUTPUT)}   (${visited.size} files)`);
+/* write output ----------------------------------------------------------- */
+const bundledContent = bundle([...visited].sort(), projectRoot, treeStr);
+
+if (opts.output) {
+  // Write to specified file
+  writeFileSync(opts.output, bundledContent);
+  console.error(`✅ wrote ${relative('.', opts.output)} (${visited.size} files)`);
+} else {
+  // Default: write to stdout
+  console.log(bundledContent);
+  // Success info goes to stderr so it doesn't interfere with piping
+  console.error(`✅ processed ${visited.size} files`);
+}
