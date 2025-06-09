@@ -150,9 +150,8 @@ ScanEx intelligently analyzes dependencies across multiple languages:
 
 ## 📊 Output Format
 
-ScanEx generates clean, structured markdown:
+ScanEx generates clean, structured markdown like this:
 
-```markdown
 <directory_tree>
 .
 ├── src/
@@ -181,7 +180,6 @@ import React from 'react';
 ```
 
 </codebase>
-```
 
 ## ⚙️ Configuration
 
