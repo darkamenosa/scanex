@@ -42,7 +42,8 @@ ScanEx now includes a built-in MCP server that allows you to use its code analys
        "scanex": {
          "command": "npx",
          "args": ["-y", "--package=scanex", "scanex-mcp"],
-         "env": {}
+         "env": {},
+         "cwd": "."
        }
      }
    }
@@ -64,11 +65,13 @@ ScanEx now includes a built-in MCP server that allows you to use its code analys
 
 **Benefits**: No more copying/pasting code manually - Cursor can analyze your codebase in real-time! 🎉
 
-### ✨ Latest Improvements (v0.1.7)
+### ✨ Latest Improvements (v0.1.8)
 
 - **🔧 Smart Path Resolution**: Automatically handles working directory differences between Cursor and your project
+- **📂 Working Directory Fix**: Added `"cwd": "."` to ensure MCP server runs from project directory
+- **🤖 Auto Project Detection**: Automatically searches for project directories when working directory is wrong
 - **📋 AI-Friendly Output**: Markdown-formatted results perfect for copy/paste into AI conversations
-- **🎯 Better Error Messages**: Clear feedback showing attempted paths when files aren't found
+- **🎯 Better Error Messages**: Clear feedback showing attempted paths and suggested solutions
 - **📊 Structured Results**: Categorized dependencies (resolved vs unresolved) with file lists
 
 See `OUTPUT_EXAMPLES.md` for examples of the new AI-optimized output format.

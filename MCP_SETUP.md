@@ -39,11 +39,14 @@ Add the Scanex server to your configuration:
     "scanex": {
       "command": "npx",
       "args": ["-y", "--package=scanex", "scanex-mcp"],
-      "env": {}
+      "env": {},
+      "cwd": "."
     }
   }
 }
 ```
+
+**Important:** The `"cwd": "."` ensures the MCP server runs from your project directory, enabling proper path resolution.
 
 **No installation required!** The `npx` command will automatically download and run the latest version of scanex when needed.
 

@@ -2,8 +2,9 @@
   "mcpServers": {
     "scanex": {
       "command": "npx",
-      "args": ["-y", "--package=scanex", "scanex-mcp"],
-      "env": {}
+      "args": ["-y", "--package=scanex@latest", "scanex-mcp"],
+      "env": {},
+      "cwd": "."
     }
   }
 } 
