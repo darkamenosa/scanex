@@ -64,6 +64,15 @@ ScanEx now includes a built-in MCP server that allows you to use its code analys
 
 **Benefits**: No more copying/pasting code manually - Cursor can analyze your codebase in real-time! 🎉
 
+### ✨ Latest Improvements (v0.1.7)
+
+- **🔧 Smart Path Resolution**: Automatically handles working directory differences between Cursor and your project
+- **📋 AI-Friendly Output**: Markdown-formatted results perfect for copy/paste into AI conversations
+- **🎯 Better Error Messages**: Clear feedback showing attempted paths when files aren't found
+- **📊 Structured Results**: Categorized dependencies (resolved vs unresolved) with file lists
+
+See `OUTPUT_EXAMPLES.md` for examples of the new AI-optimized output format.
+
 > 💡 **Publishing to NPM**: For even easier distribution, consider publishing your scanex to npm. See `PUBLISHING.md` for a complete guide on making your MCP server available via `npx` without requiring local installation.
 
 ## 🚀 Installation

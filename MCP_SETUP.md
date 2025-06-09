@@ -8,11 +8,18 @@ Model Context Protocol (MCP) allows AI assistants like Cursor to interact with e
 
 ## Available Tools
 
-The Scanex MCP server provides three main tools:
+The Scanex MCP server provides three main tools with AI-optimized output:
 
 1. **`analyze_codebase`** - Analyze a codebase and generate a comprehensive markdown bundle with dependency analysis
-2. **`scan_dependencies`** - Scan a specific file for its dependencies without generating the full bundle  
-3. **`generate_tree`** - Generate a directory tree visualization for specified paths
+2. **`scan_dependencies`** - Scan a specific file for its dependencies with structured, copy-paste ready results
+3. **`generate_tree`** - Generate a directory tree visualization with file lists and metadata
+
+### ✨ Latest Improvements (v0.1.7)
+
+- **Smart Path Resolution**: Automatically resolves file paths relative to your project directory
+- **AI-Friendly Output**: All results are formatted as structured markdown for easy copying to AI chats
+- **Better Error Handling**: Clear messages showing which paths were tried when files aren't found
+- **Rich Metadata**: Includes project root, file counts, and categorized results
 
 ## Setup for Cursor
 
