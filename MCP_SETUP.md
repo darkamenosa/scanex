@@ -125,6 +125,13 @@ npx @modelcontextprotocol/inspector npx scanex-mcp
 2. Check if you can access npmjs.com
 3. Try downloading manually: `npx scanex-mcp --help`
 
+### Path Resolution Issues (Rails/Ruby Projects)
+If you see "File does not exist" errors for files that clearly exist:
+1. **Working Directory Issue**: The MCP server might be running from a different directory than your project root
+2. **Solution**: The latest version automatically tries both absolute and relative path resolution
+3. **Manual Check**: Try running the MCP server from your project root: `cd /path/to/your/project && npx scanex-mcp`
+4. **Debug**: Check the "Working directory" line in the MCP server output to see where it's running from
+
 ## Advanced Configuration
 
 ### Custom Exclude Patterns
