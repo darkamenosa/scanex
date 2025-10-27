@@ -17,50 +17,58 @@ program
   .name('scanex')
   .description('📸 A tool that extracts and bundles related code from files or directories into a markdown file.\n\nScanEx analyzes your code dependencies and creates a comprehensive documentation file containing all related source files in a structured format.')
   .version(packageJson.version, '-v, --version', 'display version number')
-  .option('-i, --input <paths>', 
-    'comma-separated files or directories to analyze (default: current directory)\n' +
-    '                                     Examples:\n' +
-    '                                       --input src/main.js\n' +
-    '                                       --input src/,lib/utils.js\n' +
-    '                                       --input .')
-  .option('-e, --exclude <pattern>', 
-    'regex pattern of paths to ignore (default: "node_modules|test|routes/index.js")\n' +
+  .argument('[paths...]', 'files or directories to analyze (space-separated)')
+  .option('-i, --input <paths>',
+    'comma-separated files or directories to analyze (legacy)\n' +
+    '                                     You can now use positional arguments instead:\n' +
+    '                                       scanex src/main.js lib/utils.js\n' +
+    '                                     Or continue using --input for backward compatibility:\n' +
+    '                                       --input src/main.js,lib/utils.js')
+  .option('-e, --exclude <pattern>',
+    'regex pattern of paths to ignore (default: "node_modules")\n' +
     '                                     Note: .gitignore patterns are automatically included\n' +
     '                                     Examples:\n' +
     '                                       --exclude "node_modules|test|dist"\n' +
-    '                                       --exclude ".*\\.spec\\.js$|routes/index.js"', 
-    'node_modules|test|routes/index\\.js')
-  .option('-o, --output <file>', 
+    '                                       --exclude ".*\\.spec\\.js$"',
+    'node_modules')
+  .option('-o, --output <file>',
     'write output to specified file instead of stdout\n' +
-    '                                     Default: output goes to stdout\n' +
     '                                     Examples:\n' +
     '                                       --output documentation.md\n' +
     '                                       --output ./docs/codebase.md')
+  .option('--no-tree', 'skip directory tree visualization')
+  .option('--no-deps', 'do not follow dependencies (scan only specified files)')
+  .option('--dry-run', 'preview what files would be scanned without processing')
+  .option('--stats', 'show statistics (file count, languages, size)')
+  .option('-q, --quiet', 'suppress progress messages')
   .addHelpText('after', `
 Examples:
   $ scanex
     Analyze all files in current directory, output to stdout
 
-  $ scanex > scanex.md
-    Analyze current directory, save to scanex.md
+  $ scanex src/main.js
+    Analyze main.js and its dependencies (NEW: positional args!)
 
-  $ scanex --input src/main.js > documentation.md
-    Analyze main.js and its dependencies, save to documentation.md
+  $ scanex src/ lib/utils.js
+    Analyze multiple files/directories (NEW: space-separated!)
 
-  $ scanex --input src/ --output docs/codebase.md
-    Analyze all files in src/ directory, save to specified file
+  $ scanex src/ --exclude "test" --output docs.md
+    Analyze src with custom exclude pattern
 
-  $ scanex --input lib/,src/utils.js --exclude "test|spec"
-    Analyze lib/ directory and utils.js, output to stdout
+  $ scanex --input src/main.js
+    Analyze using legacy --input flag (still supported)
 
-  $ scanex --exclude "node_modules|dist|build" > project.md
-    Analyze entire project, save to project.md
+  $ scanex --dry-run src/
+    Preview what would be scanned (NEW!)
+
+  $ scanex --stats src/
+    Show statistics about the codebase (NEW!)
+
+  $ scanex --no-tree src/ --output docs.md
+    Skip directory tree in output (NEW!)
 
   $ scanex | pbcopy
     Copy bundled code directly to clipboard (macOS)
-    
-  $ scanex | xclip -selection clipboard
-    Copy bundled code directly to clipboard (Linux)
 
   $ scanex | grep "function"
     Pipe output through grep to find functions
@@ -78,13 +86,24 @@ For more information, visit: https://github.com/darkamenosa/scanex
   .parse();
 
 const opts = program.opts();
+const positionalArgs = program.args;
 
 /* plug-ins --------------------------------------------------------------- */
 const { scanners, resolvers, ALL_EXT } =
-  await loadPlugins(join(PKG_ROOT, 'lib/lang'));
+  await loadPlugins(join(PKG_ROOT, 'lib/lang'), opts.quiet);
 
-// Default to current directory if no input provided
-const INPUTS = (opts.input || '.').split(',').map(p => resolve(p.trim()));
+// Determine inputs: positional args > --input flag > current directory
+let INPUTS;
+if (positionalArgs && positionalArgs.length > 0) {
+  // Use positional arguments (space-separated)
+  INPUTS = positionalArgs.map(p => resolve(p));
+} else if (opts.input) {
+  // Use --input flag (comma-separated for backward compatibility)
+  INPUTS = opts.input.split(',').map(p => resolve(p.trim()));
+} else {
+  // Default to current directory
+  INPUTS = [resolve('.')];
+}
 
 // Validate inputs exist
 for (const inputPath of INPUTS) {
@@ -230,17 +249,17 @@ while (currentDir !== dirname(currentDir)) { // Stop at filesystem root
 
 // Choose the best project root:
 // 1. Repository root (if found)
-// 2. Project root (if found)  
+// 2. Project root (if found)
 // 3. Original input directory (fallback)
 if (foundRepoRoot) {
   projectRoot = foundRepoRoot;
-  console.error(`[scanex] Repository root detected as: ${projectRoot}`);
+  if (!opts.quiet) console.error(`[scanex] Repository root detected as: ${projectRoot}`);
 } else if (foundProjectRoot) {
   projectRoot = foundProjectRoot;
-  console.error(`[scanex] Project root detected as: ${projectRoot}`);
+  if (!opts.quiet) console.error(`[scanex] Project root detected as: ${projectRoot}`);
 } else {
   projectRoot = originalProjectRoot;
-  console.error(`[scanex] Using input directory as project root: ${projectRoot}`);
+  if (!opts.quiet) console.error(`[scanex] Using input directory as project root: ${projectRoot}`);
 }
 
 /* read .gitignore patterns ----------------------------------------------- */
@@ -286,9 +305,9 @@ if (INPUTS.length > 0 && INPUTS[0] !== projectRoot) {
       try {
         const content = readFileSync(config.path, 'utf8');
         aliasConfig = parseConfigFile(content);
-        console.error(`[scanex] Loaded ${config.type}.json from ${relative(projectRoot, config.path)} for path aliases`);
+        if (!opts.quiet) console.error(`[scanex] Loaded ${config.type}.json from ${relative(projectRoot, config.path)} for path aliases`);
       } catch (e) {
-        console.error(`Error parsing ${config.type}.json: ${e.message}`);
+        if (!opts.quiet) console.error(`Error parsing ${config.type}.json: ${e.message}`);
       }
     }
   }
@@ -303,17 +322,17 @@ if (!aliasConfig) {
     try {
       const content = readFileSync(tsconfigPath, 'utf8');
       aliasConfig = parseConfigFile(content);
-      console.error(`[scanex] Loaded tsconfig.json for path aliases`);
+      if (!opts.quiet) console.error(`[scanex] Loaded tsconfig.json for path aliases`);
     } catch (e) {
-      console.error(`Error parsing tsconfig.json: ${e.message}`);
+      if (!opts.quiet) console.error(`Error parsing tsconfig.json: ${e.message}`);
     }
   } else if (existsSync(jsconfigPath)) {
     try {
       const content = readFileSync(jsconfigPath, 'utf8');
       aliasConfig = parseConfigFile(content);
-      console.error(`[scanex] Loaded jsconfig.json for path aliases`);
+      if (!opts.quiet) console.error(`[scanex] Loaded jsconfig.json for path aliases`);
     } catch (e) {
-      console.error(`Error parsing jsconfig.json: ${e.message}`);
+      if (!opts.quiet) console.error(`Error parsing jsconfig.json: ${e.message}`);
     }
   }
 }
@@ -345,68 +364,110 @@ for (const p of INPUTS) queue.push(...walk(p, IGNORE, projectRoot));
 const visited = new Set(queue.filter(f => ALL_EXT.includes(getFileExtension(f, ALL_EXT))));
 
 /* BFS over imports ------------------------------------------------------- */
-for (let i = 0; i < queue.length; i++) {
-  const file = queue[i];
-  const scanner = scanners.get(getFileExtension(file, ALL_EXT));
-  if (!scanner) continue;
+// Skip dependency scanning if --no-deps flag is set
+if (opts.deps !== false) {
+  for (let i = 0; i < queue.length; i++) {
+    const file = queue[i];
+    const scanner = scanners.get(getFileExtension(file, ALL_EXT));
+    if (!scanner) continue;
 
-  const src = readFileSync(file, 'utf8');
-  for (const spec of scanner.scan(src, { file })) {
-    let target = null;
-    
-    // Handle both string specs (JavaScript) and object specs (Ruby)
-    const specValue = typeof spec === 'string' ? spec : spec.value;
+    const src = readFileSync(file, 'utf8');
+    for (const spec of scanner.scan(src, { file })) {
+      let target = null;
 
-    /* relative ('./foo') */
-    if (specValue.startsWith('.')) {
-      const base = resolve(dirname(file), specValue);
-      target = ALL_EXT.map(e => base.endsWith(e) ? base : base + e)
-                      .find(existsSync);
-    }
+      // Handle both string specs (JavaScript) and object specs (Ruby)
+      const specValue = typeof spec === 'string' ? spec : spec.value;
 
-    /* plug-in custom resolver */
-    if (!target) {
-      for (const r of resolvers) {
-        const resolved = r.resolve?.(spec, { projectRoot, aliasConfig, configBasePath, file });
-        if (resolved) {
-          target = resolved;
-          break;
+      /* relative ('./foo') */
+      if (specValue.startsWith('.')) {
+        const base = resolve(dirname(file), specValue);
+        target = ALL_EXT.map(e => base.endsWith(e) ? base : base + e)
+                        .find(existsSync);
+      }
+
+      /* plug-in custom resolver */
+      if (!target) {
+        for (const r of resolvers) {
+          const resolved = r.resolve?.(spec, { projectRoot, aliasConfig, configBasePath, file });
+          if (resolved) {
+            target = resolved;
+            break;
+          }
         }
       }
-    }
 
-    if (target && !IGNORE.test(target) && !visited.has(target)) {
-      // Safety check: ensure target is a file, not a directory
-      try {
-        const stat = statSync(target);
-        if (stat.isFile()) {
-          visited.add(target);
-          queue.push(target);
-          log('⊕', relative(projectRoot, target));
-        } else if (stat.isDirectory()) {
-          console.warn(`⚠️  Skipping directory: ${relative(projectRoot, target)}`);
+      if (target && !IGNORE.test(target) && !visited.has(target)) {
+        // Safety check: ensure target is a file, not a directory
+        try {
+          const stat = statSync(target);
+          if (stat.isFile()) {
+            visited.add(target);
+            queue.push(target);
+            if (!opts.quiet) log('⊕', relative(projectRoot, target));
+          } else if (stat.isDirectory()) {
+            if (!opts.quiet) console.warn(`⚠️  Skipping directory: ${relative(projectRoot, target)}`);
+          }
+        } catch (e) {
+          // File doesn't exist or can't be accessed
+          if (!opts.quiet) console.warn(`⚠️  Skipping invalid path: ${relative(projectRoot, target)} (${e.message})`);
         }
-      } catch (e) {
-        // File doesn't exist or can't be accessed
-        console.warn(`⚠️  Skipping invalid path: ${relative(projectRoot, target)} (${e.message})`);
       }
     }
   }
 }
 
+/* --dry-run: preview files without processing ---------------------------- */
+if (opts.dryRun) {
+  const sortedFiles = [...visited].sort();
+  if (!opts.quiet) {
+    console.error(`\n📋 Files that would be scanned (${sortedFiles.length}):\n`);
+    sortedFiles.forEach(f => console.error(`  ${relative(projectRoot, f)}`));
+  }
+  process.exit(0);
+}
+
+/* --stats: show statistics ----------------------------------------------- */
+if (opts.stats) {
+  const sortedFiles = [...visited].sort();
+  const extCounts = {};
+  let totalSize = 0;
+
+  sortedFiles.forEach(f => {
+    const ext = getFileExtension(f, ALL_EXT);
+    extCounts[ext] = (extCounts[ext] || 0) + 1;
+    try {
+      totalSize += statSync(f).size;
+    } catch (e) {}
+  });
+
+  if (!opts.quiet) {
+    console.error(`\n📊 Codebase Statistics:\n`);
+    console.error(`  Total files: ${sortedFiles.length}`);
+    console.error(`  Total size: ${(totalSize / 1024).toFixed(2)} KB\n`);
+    console.error(`  Languages:`);
+    Object.entries(extCounts)
+      .sort((a, b) => b[1] - a[1])
+      .forEach(([ext, count]) => {
+        console.error(`    ${ext.padEnd(15)} ${count} file${count > 1 ? 's' : ''}`);
+      });
+    console.error('');
+  }
+  process.exit(0);
+}
+
 /* build nice directory tree --------------------------------------------- */
-const treeStr = makeTree([...visited].map(f => relative(projectRoot, f)));
+const treeStr = opts.tree !== false ? makeTree([...visited].map(f => relative(projectRoot, f))) : '';
 
 /* write output ----------------------------------------------------------- */
-const bundledContent = bundle([...visited].sort(), projectRoot, treeStr);
+const bundledContent = bundle([...visited].sort(), projectRoot, treeStr, opts.tree !== false);
 
 if (opts.output) {
   // Write to specified file
   writeFileSync(opts.output, bundledContent);
-  console.error(`✅ wrote ${relative('.', opts.output)} (${visited.size} files)`);
+  if (!opts.quiet) console.error(`✅ wrote ${relative('.', opts.output)} (${visited.size} files)`);
 } else {
   // Default: write to stdout
   console.log(bundledContent);
   // Success info goes to stderr so it doesn't interfere with piping
-  console.error(`✅ processed ${visited.size} files`);
+  if (!opts.quiet) console.error(`✅ processed ${visited.size} files`);
 }
